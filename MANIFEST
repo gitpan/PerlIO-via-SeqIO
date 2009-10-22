@@ -9,4 +9,5 @@ t/001_tie.t
 t/002_passthru.t
 t/003_seqio.t
 t/test.fas
+t/test.bls
 META.yml

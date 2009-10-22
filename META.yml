@@ -1,6 +1,6 @@
 ---
 name: PerlIO-via-SeqIO
-version: 0.1
+version: 0.02
 author: []
 abstract: PerlIO layer for biological sequence formats
 license: perl
@@ -13,11 +13,12 @@ requires:
 build_requires:
   File::Spec: 0
   File::Temp: 0
+  Module::Build: 0
   Test::More: 0
 provides:
   PerlIO::via::SeqIO:
     file: lib/PerlIO/via/SeqIO.pm
-    version: 0.01
+    version: 0.02
 generated_by: Module::Build version 0.31012
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

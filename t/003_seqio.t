@@ -1,18 +1,25 @@
 #-*-perl-*-
 #$Id$
+
 use strict;
 use warnings;
-use lib 'lib';
-use Test::More tests => 28;
+use Module::Build;
+our $home;
+BEGIN {
+    use File::Spec;
+    our $home = '.';
+    push @INC, File::Spec->catfile($home,'lib');
+}
+use Test::More tests => 31;
 use File::Temp qw(tempfile);
-use File::Spec;
 use_ok('IO::Seekable');
 use_ok('PerlIO::via::SeqIO');
 use_ok('Bio::SeqIO');
-use PerlIO::via::SeqIO qw(O open);
+use_ok('Bio::SearchIO');
+use PerlIO::via::SeqIO qw(O T open);
 
 # seqio tests...
-my $testf = File::Spec->catfile('t', 'test.fas');
+my $testf = File::Spec->catfile($home, 't', 'test.fas');
 
 ok open( my $seqfh, "<:via(SeqIO)", $testf ), "SeqIO open for reading";
 ok my $seq = <$seqfh>, "Readline an object";
@@ -70,7 +77,29 @@ ok open($formh, "<$tmpf"), "open multi-format dump";
 ok $rest[1] =~ /^SQ.*?\s1080/, "embl there first";
 ok $rest[3] =~ /^183.*?Length: 1080/, "gcg there second";
 
+# render de novo seq objects
+undef $tmph;
+ok open($tmph, ">:via(SeqIO::embl)", $tmpf), "open tempfile for writing Embl";
+diag("redefine warnings may appear; do not be alarmed...");
+$testf = File::Spec->catfile($home,'t', 'test.bls');
+my $result = Bio::SearchIO->new( -file=>$testf, -format=>'blast' )->next_result;
+my $hsp_ct = 0;
+while(my $hit = $result->next_hit()){
+    while(my $hsp = $hit->next_hsp()){
+	$hsp_ct++;
+	my $aln = $hsp->get_aln;
+	for ($aln->each_seq) {
+	    print $tmph T($_);
+	}
+	1;
 
+    }
+}
+$tmph->close;
+undef $tmph;
+open($tmph, "<$tmpf");
+@rest = <$tmph>;
+is ( scalar grep(/^SQ/, @rest), 2*$hsp_ct, "wrote converted hsps as embl");
 # STDIN/STDOUT checks 
 SKIP : { 
     my $cat;
@@ -80,9 +109,10 @@ SKIP : {
 	/ms/i and $cat = 'type';
     }
     skip 1, "Don't know your OS; complain to author" unless $cat;
-    my $test = File::Spec->catfile('t', 'test.fas');
-    my $lib = File::Spec->catfile('lib');
-    my @gcg = `$cat $test | perl -I$lib -MPerlIO::via::SeqIO -e "open(STDIN, '<:via(SeqIO::fasta)'); open(STDOUT, '>:via(SeqIO::gcg)'); while (<STDIN>) { print }"`;
+    my $test = File::Spec->catfile($home, 't', 'test.fas');
+    my $lib = File::Spec->catfile($home, 'lib');
+    my $perl = Module::Build->current->perl;
+    my @gcg = `$cat $test | $perl -I$lib -MPerlIO::via::SeqIO -e "open(STDIN, '<:via(SeqIO::fasta)'); open(STDOUT, '>:via(SeqIO::gcg)'); while (<STDIN>) { print }"`;
     my @a  = grep(/^.+$/, @gcg);
     $a = 0; $a += (split /\s+/)[1] for grep (/^\s+[0-9]/, @gcg);
     is ($a, 142639, "STDIN/STDOUT work in shell");

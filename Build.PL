@@ -3,7 +3,6 @@ use Module::Build;
 
 Module::Build->new
     ( module_name     => 'PerlIO::via::SeqIO',
-      dist_version    => 0.1,
       license         => 'perl',
       perl            => 5.8,
       requires        => {
@@ -12,6 +11,7 @@ Module::Build->new
 			  'IO::Seekable'   => 0
                          },
       build_requires  => {
+	                  'Module::Build'  => 0,
                           'Test::More'     => 0,
 	                  'File::Temp'     => 0,
 			  'File::Spec'     => 0,

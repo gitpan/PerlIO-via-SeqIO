@@ -1,5 +1,5 @@
 #-*-perl-*-
-#$Id$
+#$Id: 002_passthru.t 512 2009-10-22 15:14:29Z maj $
 use strict;
 use warnings;
 use lib 'lib';

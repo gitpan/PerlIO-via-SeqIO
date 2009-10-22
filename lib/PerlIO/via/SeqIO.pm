@@ -5,14 +5,16 @@ package PerlIO::via::SeqIO;
 use strict;
 use warnings;
 no warnings qw(once);
+use Bio::Seq;
 use Carp;
 use IO::String;
 use IO::Seekable;
 use File::Temp qw(tempfile);
 use Exporter;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our @ISA = qw(Exporter);
-our @EXPORT = qw(O open);
+our @EXPORT = qw(open);
+our @EXPORT_OK = qw(O T);
 our %OBJS;
 our %ITERS;
 our $INSTANCE = 128; # big "fileno"
@@ -201,6 +203,28 @@ sub FILL {
     return;
 }
 
+# seq object converter
+
+sub T {
+    my @objs = @_;
+    my @ret;
+    foreach my $s (@objs) {
+	unless (defined $s and ref($s) and
+		($s->isa('Bio::SeqI') || $s->isa('Bio::Seq') || 
+		 $s->isa('Bio::PrimarySeq'))) {
+	    carp "Item undefined or not a sequence object; returning an undef";
+	    push @ret, undef;
+	    next;
+	}
+	$s->isa('Bio::PrimarySeq') and $s = _pseq_to_seq($s);
+	push @ret, sprintf("%s\n", $s);
+	$OBJS{$ret[-1]} = $s;
+    }
+    return wantarray ? @ret : $ret[0];
+}
+
+# object getter ...
+
 sub O {
     my $sym = shift;
     no strict qw(refs);
@@ -224,6 +248,25 @@ sub O {
     else {
 	croak("Don't understand the arg");
     }
+}
+
+# wrap Bio::PrimarySeqs (incl. Bio::LocatableSeqs) in a Bio::Seq
+# for Bio::SeqIO use
+
+sub _pseq_to_seq {
+    my @pseqs = @_;
+    my @ret;
+    foreach (@pseqs) {
+	unless (defined $_ && ref($_) && $_->isa('Bio::PrimarySeq')) {
+	    push @ret, undef;
+	    next;
+	}
+	my $seq = Bio::Seq->new();
+	$seq->id( $_->display_id || $_->id );
+	$seq->primary_seq( $_ );
+	push @ret, $seq;
+    }
+    return wantarray ? @ret : $ret[0];
 }
 
 1;
@@ -326,9 +369,11 @@ sub set_write_format {
     my $o = $self->o;
     unless (grep( /^$format$/, @PerlIO::via::SeqIO::SUPPORTED_FORMATS)) {
 	carp("The format '$format' isn't supported; current format unchanged");
+	return;
     }
     unless ($$o{mode} && $$o{mode} =~ />|\+/) {
 	carp("Can't set format; handle not open for writing");
+	return;
     }
     $self->o->{format} = $format;
     $$o{io_string} = IO::String->new();
@@ -357,6 +402,8 @@ sub fh {
 1;	
 
 __END__
+
+=pod
 
 =head1 NAME
 
@@ -462,6 +509,19 @@ the all-purpose object getter L</UTILITIES/O()>:
    print join("\t", O($_)->id, O($_)->desc), "\n";
  }
 
+=item Writing a I<de novo> sequence object
+
+Use the L</UTILITIES/T()> mapper to convert a Bio::Seq object into a thing that can be formatted by C<via(SeqIO)>:
+
+ open($seqfh, ">:via(SeqIO::embl)", "my.embl");
+ my $result = Bio::SearchIO->new( -file=>'my.blast' )->next_result;
+ while(my $hit = $result->next_hit()){
+   while(my $hsp = $hit->next_hsp()){
+     my $aln = $hsp->get_aln;
+       print $seqfh T($_) for ($aln->each_seq);
+     }
+   }
+
 =item Writing plain text
 
 Interspersing plain text among your sequences is easy; just print the
@@ -527,15 +587,35 @@ and not
 
 =head1 UTILITIES
 
+In the C<PerlIO::via::SeqIO> namespace. To use, do
+
+ use PerlIO::via::SeqIO qw(open O T);
+
+(The C<open> hook needs to be available for the package to
+function. It is a member of C<@EXPORT>. See
+L</IMPLEMENTATION/C<PerlIO::via::SeqIO> exports C<open()>>.)
+
 =head2 O()
 
  Title   : O
- Usage   : $o = O($sym)
+ Usage   : $o = O($sym) # export it; not an object method
  Function: get the object "represented" by the argument
  Returns : the right object
  Args    : PerlIO::via::SeqIO GLOB, or 
            *PerlIO::via::SeqIO::TFH (tied fh) or
            scalar string (sprintf-rendered Bio::SeqI object)
+ Example : $seqobj = O($s = <$seqfh>);
+
+=head2 T()
+
+ Title   : T
+ Usage   : T($seqobj) # export it; not an object method
+ Function: Transform a real Bio::Seq object to a
+           via(SeqIO)-writeable thing
+ Returns : A thing writeable as a formatted sequence
+           by a via(SeqIO) filehandle
+ Args    : a[n array of] Bio::Seq or related object[s]
+ Example : print $seqfh T($seqobj);
 
 =head2 set_write_format()
 
@@ -546,15 +626,6 @@ and not
  Returns : true on success
  Args    : scalar string; a supported format 
            (see @PerlIO::via::SeqIO::SUPPORTED_FORMATS)
-
-=head1 TODO
-
-Allow writing of de novo (not previously read) sequence objects; i.e.
-
- $seq = $seqio->next_seq;
- print $out $seq;
-
-in this scheme.
 
 =head1 SEE ALSO
 
@@ -568,4 +639,3 @@ L<http://bioperl.org>
  http://bioperl.org/wiki/Mark_Jensen
 
 =cut
-
