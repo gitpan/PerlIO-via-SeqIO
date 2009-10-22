@@ -10,6 +10,7 @@ use IO::String;
 use IO::Seekable;
 use File::Temp qw(tempfile);
 use Exporter;
+our $VERSION = '0.01';
 our @ISA = qw(Exporter);
 our @EXPORT = qw(O open);
 our %OBJS;
