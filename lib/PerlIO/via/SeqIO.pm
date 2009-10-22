@@ -1,4 +1,4 @@
-#$Id: SeqIO.pm 508 2009-10-21 21:36:38Z maj $
+#$Id: SeqIO.pm 513 2009-10-22 18:09:34Z maj $
 # PerlIO layer for sequence format with BioPerl guts
 # Enjoy!
 package PerlIO::via::SeqIO;
@@ -11,7 +11,7 @@ use IO::String;
 use IO::Seekable;
 use File::Temp qw(tempfile);
 use Exporter;
-our $VERSION = '0.02';
+our $VERSION = '0.021';
 our @ISA = qw(Exporter);
 our @EXPORT = qw(open);
 our @EXPORT_OK = qw(O T);
@@ -328,17 +328,20 @@ sub PRINT{
     my $ios = $$o{io_string};
     my $ret = 0;
     foreach (@args) {
-	if ($_ =~ /HASH/) { # string rep of object
-	    $_ = $OBJS{$_};
-	    $$o{engine}->write_seq($_);
-	    $ios->pos(0); # seek to top
-	    my $line = join('', <$ios>);
-	    $ios->pos(0); ${$ios->string_ref}='';
-	    $self->write($line, length $line);
-	    undef $OBJS{$_}; # clean up
-	}
-	else { # write the raw buffer
-	    $self->write($_, length);
+	my @input = split( /(Bio::.*?=HASH\(0x[0-9a-f]+\)\s)/);
+	foreach my $item (@input) {
+	    if ($item =~ /HASH/) { # string rep of object
+		$item = $OBJS{$item};
+		$$o{engine}->write_seq($item);
+		$ios->pos(0); # seek to top
+		my $line = join('', <$ios>);
+		$ios->pos(0); ${$ios->string_ref}='';
+		$self->write($line, length $line);
+		undef $OBJS{$item}; # clean up
+	    }
+	    else { # write the raw buffer
+		$self->write($item, length);
+	    }
 	}
     }
     1;
@@ -526,6 +529,14 @@ Use the L</UTILITIES/T()> mapper to convert a Bio::Seq object into a thing that 
 
 Interspersing plain text among your sequences is easy; just print the
 desired text to the handle. See the L</SYNOPSIS>.
+
+Even the following works:
+
+ open($in, "<:via(SeqIO)", 'my.fas')
+ open($out, ">:via(SeqIO::embl)", 'annotated.txt');
+
+ $seq = <$in>;
+ print $out "In EMBL format, the sequence would be rendered:", $s;
 
 =item Switching write formats
 
