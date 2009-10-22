@@ -477,7 +477,7 @@ allows
  cat my.gcg | perl your.pl > out
 
 where C<your.pl> can read STDIN and acquire the sequence objects by
-using the object getter L</UTILITIES/O()>. The format
+using the object getter L<O()|/UTILITIES>. The format
 of the input in this case will be guessed by the C<Bio::SeqIO>
 machinery.
 
@@ -506,7 +506,7 @@ This does what you mean:
  }
 
 However, C<$_> here is not the sequence object itself. To get that use 
-the all-purpose object getter L</UTILITIES/O()>:
+the all-purpose object getter L<O()|/UTILITIES>:
 
  while (<$in>) {
    print join("\t", O($_)->id, O($_)->desc), "\n";
@@ -514,7 +514,7 @@ the all-purpose object getter L</UTILITIES/O()>:
 
 =item Writing a I<de novo> sequence object
 
-Use the L</UTILITIES/T()> mapper to convert a Bio::Seq object into a thing that can be formatted by C<via(SeqIO)>:
+Use the L<T()|/UTILITIES> mapper to convert a Bio::Seq object into a thing that can be formatted by C<via(SeqIO)>:
 
  open($seqfh, ">:via(SeqIO::embl)", "my.embl");
  my $result = Bio::SearchIO->new( -file=>'my.blast' )->next_result;
@@ -541,7 +541,7 @@ Even the following works:
 =item Switching write formats
 
 You can also easily switch write formats. (Why? Because...who knows?)
-Use C<set_write_format> off the tied handle object:
+Use L<set_write_format|/UTILITIES> off the tied handle object:
 
  open($in, "<:via(SeqIO)", 'my.fas')
  open($out, ">:via(SeqIO::embl)", 'multi.txt');
@@ -603,8 +603,9 @@ In the C<PerlIO::via::SeqIO> namespace. To use, do
  use PerlIO::via::SeqIO qw(open O T);
 
 (The C<open> hook needs to be available for the package to
-function. It is a member of C<@EXPORT>. See
-L</IMPLEMENTATION/C<PerlIO::via::SeqIO> exports C<open()>>.)
+function. It is a member of C<@EXPORT>. See L</IMPLEMENTATION> for
+details.
+
 
 =head2 O()
 
@@ -640,7 +641,7 @@ L</IMPLEMENTATION/C<PerlIO::via::SeqIO> exports C<open()>>.)
 
 =head1 SEE ALSO
 
-L<perlio>, L<PerlIO::via>, L<Bio::SeqIO>, L<Bio::Seq>, 
+L<PerlIO|perlio>, L<PerlIO::via>, L<Bio::SeqIO>, L<Bio::Seq>, 
 L<http://bioperl.org>
 
 =head1 AUTHOR - Mark A. Jensen
