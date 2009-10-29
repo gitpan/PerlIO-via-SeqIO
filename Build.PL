@@ -4,11 +4,14 @@ use Module::Build;
 Module::Build->new
     ( module_name     => 'PerlIO::via::SeqIO',
       license         => 'perl',
-      perl            => 5.8,
       requires        => {
+	                  perl            => 5.010,
                           'Bio::Root::Version'=> '1.006',
 			  'IO::String'     => 0,
-			  'IO::Seekable'   => 0
+			  'IO::Seekable'   => 0,
+			  'PerlIO::Util'   => 0,
+			  'Scalar::Util'   => 1.19,
+			  'Symbol'         => 0
                          },
       build_requires  => {
 	                  'Module::Build'  => 0,

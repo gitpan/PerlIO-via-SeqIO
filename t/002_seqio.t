@@ -1,44 +1,143 @@
 #-*-perl-*-
-#$Id: 002_passthru.t 512 2009-10-22 15:14:29Z maj $
+#$Id: 002_seqio.t -1   $
+
 use strict;
 use warnings;
-use lib 'lib';
-use Test::More tests => 12;
+use Module::Build;
+our $home;
+BEGIN {
+    use File::Spec;
+    our $home = '.';
+    push @INC, File::Spec->catfile($home,'lib');
+}
+use Test::More tests => 32;
 use File::Temp qw(tempfile);
-use File::Spec;
 use_ok('IO::Seekable');
 use_ok('PerlIO::via::SeqIO');
 use_ok('Bio::SeqIO');
-use PerlIO::via::SeqIO qw(O open);
+use_ok('Bio::SearchIO');
+use PerlIO::via::SeqIO qw(open O T);
+use subs qw(O);
 
-# test open passthrough
+diag("Using exported open...");
+# seqio tests...
+my $testf = File::Spec->catfile($home, 't', 'test.fas');
 
-ok my ($tmph, $tmpf) = tempfile, "make plain file";
-print $tmph join("\n", qw( fourscore and seven years ago )), "\n";
-$tmph->close;
-
-ok open(my $fh, "<", $tmpf), "open plain file";
-my @slurp = <$fh>;
-is_deeply( \@slurp, [map { $_."\n" } qw( fourscore and seven years ago )], "roundtrip plain file");
-$fh->close;
-undef $fh;
+ok open( my $seqfh, "<:via(SeqIO)", $testf ), "SeqIO open for reading";
+ok my $seq = <$seqfh>, "Readline an object";
+isa_ok(O($seq), 'Bio::Seq');
+is(O($seq)->id, '183.m01790', "correct seq");
+my @rest = <$seqfh>;
+is( @rest, 13, "got the rest");
+close($seqfh);
+ok open( 'DATA', "<:via(SeqIO)" ), "open DATA through SeqIO layer";
 my $dtapos = tell(DATA);
-ok open( $fh, "<&DATA" ), "redirect DATA, open passthru"; 
-<$fh>;
-my $slurp=<$fh>;
-ok $slurp =~ /^ATGGACGACAAAG/, "redirect ok, got sequence line";
+ok $seq = <DATA>, "Readline an object";
+isa_ok( O($seq), 'Bio::Seq');
+is(O($seq)->id, '183.m01790', "correct seq");
+{ local $_ = $seq;
+  is( O->id, '183.m01790', "correct seq (O with \$_)");
+}
+@rest=<DATA>;
+is( @rest, 13, "got the rest");
+
 
 seek(DATA, $dtapos, 0);
-ok open( DUP, "<&DATA" ), "duplicate DATA, bareword handle, open passthru";
-<DUP>;$slurp=<DUP>;
-ok $slurp =~ /^ATGGACGACAAAG/, "dup ok, got sequence line";
-seek(DATA, $dtapos,0);
-ok open( my $dup, "<&DATA"), "duplicate DATA, scalar handle, open passthru";
-<$dup>;$slurp=<$dup>;
-ok $slurp =~ /^ATGGACGACAAAG/, "dup ok, got sequence line";
-seek(DATA, $dtapos,0);
+ok open( 'DATA', "<:via(SeqIO)" ), "open DATA through SeqIO layer";
 
+my ($tmph, $tmpf) = tempfile(DIR=>'.');
+$tmph->close;
+unlink $tmpf or diag("tempfile unlink issue: $!");
 
+ok open( $tmph, ">:via(SeqIO::embl)", $tmpf) , "open tempfile for Embl write";
+while(<DATA>) {
+    print $tmph $_;
+}
+close($tmph);
+
+ok open(my $emblh, "<",  $tmpf), "open embl outfile as text file";
+#checksum on id numbers...
+my $a = 0; $a += (split /\s+/)[2] for grep (/^SQ/, <$emblh>);
+is( $a, 14262 , "fasta converted to embl" );
+close($emblh);
+
+seek(DATA, $dtapos, 0);
+ok open ($tmph, ">:via(SeqIO::gcg)", $tmpf), "open tempfile for GCG write";
+while(<DATA>) { print $tmph $_; }
+close($tmph);
+
+ok open(my $gcgh, "<", $tmpf), "open gcg outfile as text file";
+# check sum on lhs coordinates
+my @a = grep(/^.+$/, <$gcgh>);
+$a = 0; $a += (split /\s+/)[1] for grep (/^\s+[0-9]/, @a);
+is ($a, 142639, "fasta converted to gcg");
+close($gcgh);
+
+# change formats on fly
+seek(DATA, $dtapos, 0);
+ok open(my $formh, ">:via(SeqIO::embl)", $tmpf), "open tempfile for writing Embl";
+$seq = <DATA>;
+eval { print $formh $seq };
+ok !$@, "print as embl";
+ok ($formh->set_write_format('gcg'), "set gcg format");
+eval { print $formh $seq };
+ok !$@, "print as gcg";
+close($formh);
+undef $formh;
+
+ok open($formh, "<", $tmpf), "open multi-format dump";
+@rest = <$formh>;
+@rest = grep /1080/, @rest;
+ok $rest[1] =~ /^SQ.*?\s1080/, "embl there first";
+ok $rest[3] =~ /^183.*?Length: 1080/, "gcg there second";
+close($formh);
+
+# render de novo seq objects
+undef $tmph;
+ok open($tmph, ">:via(SeqIO::embl)", $tmpf), "open tempfile for writing Embl";
+diag("redefine warnings may appear; do not be alarmed...");
+$testf = File::Spec->catfile($home,'t', 'test.bls');
+my $result = Bio::SearchIO->new( -file=>$testf, -format=>'blast' )->next_result;
+my $hsp_ct = 0;
+while(my $hit = $result->next_hit()){
+    while(my $hsp = $hit->next_hsp()){
+	$hsp_ct++;
+	my $aln = $hsp->get_aln;
+	for ($aln->each_seq) {
+	    print $tmph T($_);
+	}
+	1;
+
+    }
+}
+close($tmph);
+undef $tmph;
+
+open($tmph, "<", $tmpf);
+@rest = <$tmph>;
+is ( scalar grep(/^SQ/, @rest), 2*$hsp_ct, "wrote converted hsps as embl");
+close($tmph);
+unlink $tmpf or diag("tempfile unlink issue: $!");
+undef $tmph;
+
+# STDIN/STDOUT checks 
+SKIP : { 
+    my $cat;
+    for ($^O) {
+	/unix/i and $cat = 'cat';
+	/cygwin/i and $cat = 'cat';
+	/ms/i and $cat = 'type';
+    }
+    skip 1, "Don't know your OS; complain to author" unless $cat;
+    my $test = File::Spec->catfile($home, 't', 'test.fas');
+    my $lib = File::Spec->catfile($home, 'lib');
+    my $perl = Module::Build->current->perl;
+    my @gcg = `$cat $test | $perl -I$lib "-MPerlIO::via::SeqIO qw(open)" -e "open(STDIN, '<:via(SeqIO::fasta)'); open(STDOUT, '>:via(SeqIO::gcg)'); while (<STDIN>) { print }"`;
+    my @a  = grep(/^.+$/, @gcg);
+    $a = 0; $a += (split /\s+/)[1] for grep (/^\s+[0-9]/, @gcg);
+    is ($a, 142639, "STDIN/STDOUT work in shell");
+}
+1;
 __END__
 >183.m01790 |||similar to unknown protein||chr_13|chr13|183
 ATGGACGACAAAGAACTCGAAATACCGGTAGAACATTCCACGGCTTTCGGTCAGCTCGTG
