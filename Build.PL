@@ -13,6 +13,9 @@ Module::Build->new
 			  'Scalar::Util'   => 1.19,
 			  'Symbol'         => 0
                          },
+      recommends      => {
+	                  'PerlIO::via::gzip' => 0.031
+                         },
       build_requires  => {
 	                  'Module::Build'  => 0,
                           'Test::More'     => 0,

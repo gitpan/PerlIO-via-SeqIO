@@ -128,7 +128,7 @@ SKIP : {
 	/cygwin/i and $cat = 'cat';
 	/ms/i and $cat = 'type';
     }
-    skip 1, "Don't know your OS; complain to author" unless $cat;
+    skip "Don't know your OS; complain to author", 1 unless $cat;
     my $test = File::Spec->catfile($home, 't', 'test.fas');
     my $lib = File::Spec->catfile($home, 'lib');
     my $perl = Module::Build->current->perl;

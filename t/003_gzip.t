@@ -10,7 +10,7 @@ use PerlIO::via::SeqIO;
 
 my $HAVE_VIA_GZIP = eval "require PerlIO::via::gzip; 1";
 SKIP : {
-    skip 3, "PerlIO::via::gzip unavailable" unless $HAVE_VIA_GZIP;
+    skip "PerlIO::via::gzip unavailable", 3 unless $HAVE_VIA_GZIP;
     my $tpref = File::Spec->catfile('t', 'test');
     ok open(my $fh, "<:via(gzip):via(SeqIO::fasta)", "$tpref.fas.gz"), 'open test.fas.gz for reading via SeqIO';
     my ($tmph, $tmpf) = tempfile(UNLINK=>1);
