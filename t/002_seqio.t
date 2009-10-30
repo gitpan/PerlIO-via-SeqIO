@@ -1,5 +1,5 @@
 #-*-perl-*-
-#$Id: 002_seqio.t -1   $
+#$Id: 002_seqio.t 529 2009-10-29 18:48:14Z maj $
 
 use strict;
 use warnings;

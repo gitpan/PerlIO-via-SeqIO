@@ -1,5 +1,5 @@
 #-*-perl-*-
-#$Id: 001_passthru.t -1   $
+#$Id: 001_passthru.t 529 2009-10-29 18:48:14Z maj $
 use strict;
 use warnings;
 use lib '../lib';

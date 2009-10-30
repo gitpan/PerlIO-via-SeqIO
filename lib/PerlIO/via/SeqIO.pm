@@ -1,4 +1,4 @@
-#$Id: SeqIO.pm 513 2009-10-22 18:09:34Z maj $
+#$Id: SeqIO.pm 529 2009-10-29 18:48:14Z maj $
 # PerlIO layer for sequence format with BioPerl guts
 # Enjoy!
 package PerlIO::via::SeqIO;
@@ -14,7 +14,7 @@ use PerlIO::Util;
 use Scalar::Util qw(weaken);
 use Symbol;
 
-our $VERSION = '0.03';
+our $VERSION = '0.031';
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(open O T);
 our %OBJS;
@@ -50,6 +50,8 @@ END
 		return $seq;
 	    };
 	}
+	# add a 'role' to our handles...
+	push @IO::Handle::ISA, 'IO::Handle::_viaSeqIO';
     }
     return;
 }
@@ -452,11 +454,9 @@ sub AUTOLOAD {
     }
 }
 
-# can't subclass IO::Handle (see perldoc),
-# so need to pollute...
-# weaken things to leave Nature as we found it...
-
-package IO::Handle;
+# pollute IO::Handle slightly differently ( to avoid unauthorized
+# release error)
+package IO::Handle::_viaSeqIO;
 use strict;
 use warnings;
 use Scalar::Util qw(weaken);

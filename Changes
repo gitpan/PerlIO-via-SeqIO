@@ -1,5 +1,8 @@
 Revision history for Perl module PerlIO::via::SeqIO
-0.03 Fri Oct 23 12:03:00 2009
+0.031 Thu Oct 29 21:24:00 2009
+    - avoid the "unauthorized release" error by pushing a
+      "subclass" package onto the IO::Handle:ISA
+0.03  Fri Oct 23 12:03:00 2009
     - made open() export optional (only necessary for the 
       2-argument STDIN/STDOUT/DATA redirect)
     - converted most under-the-hood filehandles to anonymous
