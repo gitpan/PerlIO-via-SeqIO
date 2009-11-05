@@ -1,4 +1,6 @@
 Revision history for Perl module PerlIO::via::SeqIO
+0.0321 Thu Nov 05 08:40:00 2009
+    - fix 002_seqio.t bug
 0.031 Thu Oct 29 21:24:00 2009
     - avoid the "unauthorized release" error by pushing a
       "subclass" package onto the IO::Handle:ISA

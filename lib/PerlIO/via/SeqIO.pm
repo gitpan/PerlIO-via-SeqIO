@@ -14,7 +14,7 @@ use PerlIO::Util;
 use Scalar::Util qw(weaken);
 use Symbol;
 
-our $VERSION = '0.032';
+our $VERSION = '0.0321';
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(open O T);
 our %OBJS;

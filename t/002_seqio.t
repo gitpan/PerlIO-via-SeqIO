@@ -13,6 +13,7 @@ BEGIN {
 use Test::More tests => 32;
 use File::Temp qw(tempfile);
 use_ok('IO::Seekable');
+push @IO::Handle::ISA, 'IO::Seekable';
 use_ok('PerlIO::via::SeqIO');
 use_ok('Bio::SeqIO');
 use_ok('Bio::SearchIO');
