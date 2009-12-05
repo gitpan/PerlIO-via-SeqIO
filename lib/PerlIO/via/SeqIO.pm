@@ -14,9 +14,10 @@ use PerlIO::Util;
 use Scalar::Util qw(weaken);
 use Symbol;
 
-our $VERSION = '0.0321';
+our $VERSION = '0.0322';
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(open O T);
+our @EXPORT = qw(O T);
+our @EXPORT_OK = qw(open);
 our %OBJS;
 our %ITERS;
 our $INSTANCE = 128; # big "fileno"
@@ -713,9 +714,7 @@ C<@PerlIO::via::SeqIO::SUPPORTED_FORMATS>. Currently they are
 
 =head1 UTILITIES
 
-In the C<PerlIO::via::SeqIO> namespace. To use, do
-
- use PerlIO::via::SeqIO qw(O T);
+The C<O()> and C<T()> methods are exported by default.
 
 The C<open> hook needs to be available for the 2-argument C<open> redirections
 (see L</DETAILS>) to work. Do
@@ -726,7 +725,7 @@ The C<open> hook needs to be available for the 2-argument C<open> redirections
 =head2 O()
 
  Title   : O
- Usage   : $o = O($sym) # export it; not an object method
+ Usage   : $o = O($sym) # not an object method
  Function: get the object "represented" by the argument
  Returns : the right object
  Args    : PerlIO::via::SeqIO GLOB, or 
@@ -737,7 +736,7 @@ The C<open> hook needs to be available for the 2-argument C<open> redirections
 =head2 T()
 
  Title   : T
- Usage   : T($seqobj) # export it; not an object method
+ Usage   : T($seqobj) # not an object method
  Function: Transform a real Bio::Seq object to a
            via(SeqIO)-writeable thing
  Returns : A thing writeable as a formatted sequence

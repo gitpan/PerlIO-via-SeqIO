@@ -1,4 +1,9 @@
 Revision history for Perl module PerlIO::via::SeqIO
+0.0322 Sat Dec 05 15:16:00 2006
+    - specify Bio::Seq, Bio::SeqIO requirements explicitly
+      in Build.PL (may avoid certain failures)
+    - O and T are now exported by default; better one-liners
+      this way
 0.0321 Thu Nov 05 08:40:00 2009
     - fix 002_seqio.t bug
 0.031 Thu Oct 29 21:24:00 2009

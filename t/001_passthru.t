@@ -14,6 +14,7 @@ use PerlIO::via::SeqIO qw(open);
 
 # test open passthrough
 no strict qw(refs);
+diag("Using exported open...");
 #read
 ok my ($tmph, $tmpf) = tempfile(DIR=>'.', UNLINK=>1), "make plain file";
 

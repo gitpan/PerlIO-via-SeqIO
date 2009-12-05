@@ -7,6 +7,8 @@ Module::Build->new
       requires        => {
 	                  perl            => 5.010,
                           'Bio::Root::Version'=> '1.006',
+                          'Bio::Seq'=> 0,
+                          'Bio::SeqIO'=> 0,
 			  'IO::String'     => 0,
 			  'IO::Seekable'   => 0,
 			  'PerlIO::Util'   => 0,
@@ -14,7 +16,7 @@ Module::Build->new
 			  'Symbol'         => 0
                          },
       recommends      => {
-	                  'PerlIO::via::gzip' => 0.031
+	                  'PerlIO::via::gzip' => 0.021
                          },
       build_requires  => {
 	                  'Module::Build'  => 0,

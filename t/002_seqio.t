@@ -17,7 +17,7 @@ push @IO::Handle::ISA, 'IO::Seekable';
 use_ok('PerlIO::via::SeqIO');
 use_ok('Bio::SeqIO');
 use_ok('Bio::SearchIO');
-use PerlIO::via::SeqIO qw(open O T);
+use PerlIO::via::SeqIO qw(open);
 use subs qw(O);
 
 diag("Using exported open...");
